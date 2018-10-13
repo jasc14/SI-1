@@ -1,3 +1,7 @@
+// ME HE QUEDADO EN LA LINEA 63 DEL GITHUB
+// https://github.com/hunzaGit/Algoritmo-A-estrella/blob/master/src/Negocio/aStar/Algoritmo_A_Estrella.java
+
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -5,11 +9,85 @@
  */
 package AEstrella;
 
+import java.util.ArrayList;
 
 /**
  *
  * @author mirse
  */
+class Nodo{
+    Coordenada c;
+    int f;
+    int g;
+    int h;
+    ArrayList<Nodo> listaVecinos;
+    Nodo vecino1;
+    Nodo vecino2;
+    Nodo vecino3;
+    Nodo vecino4;
+    Nodo vecino5;
+    Nodo vecino6;
+    public Nodo(Coordenada coord, int g, int h){
+        c = coord;
+        this.g = g;
+        this.h = h;
+        f = g + h;
+        listaVecinos = new ArrayList<Nodo>();
+    }
+    public Coordenada getCoordenada(){ return c; }
+    public int getG(){ return g; }
+    public int getH(){ return h; }
+    public int getF(){ return f; }
+    public ArrayList<Nodo> getListaVecinos() { return listaVecinos; }
+    public Nodo getVecino1(){ return vecino1; }
+    public void setVecino1(Nodo n){
+        if(listaVecinos.contains(vecino1)){
+            listaVecinos.remove(vecino1);
+        }
+        listaVecinos.add(n);
+        vecino1 = n;
+    }
+    public Nodo getVecino2(){ return vecino2; }
+    public void setVecino2(Nodo n){
+        if(listaVecinos.contains(vecino2)){
+            listaVecinos.remove(vecino2);
+        }
+        listaVecinos.add(n);
+        vecino2 = n;
+    }
+    public Nodo getVecino3(){ return vecino3; }
+    public void setVecino3(Nodo n){
+        if(listaVecinos.contains(vecino3)){
+            listaVecinos.remove(vecino3);
+        }
+        listaVecinos.add(n);
+        vecino3 = n;
+    }
+    public Nodo getVecino4(){ return vecino4; }
+    public void setVecino4(Nodo n){
+        if(listaVecinos.contains(vecino4)){
+            listaVecinos.remove(vecino4);
+        }
+        listaVecinos.add(n);
+        vecino4 = n;
+    }
+    public Nodo getVecino5(){ return vecino5; }
+    public void setVecino5(Nodo n){
+        if(listaVecinos.contains(vecino5)){
+            listaVecinos.remove(vecino5);
+        }
+        listaVecinos.add(n);
+        vecino5 = n;
+    }
+    public Nodo getVecino6(){ return vecino6; }
+    public void setVecino6(Nodo n){
+        if(listaVecinos.contains(vecino6)){
+            listaVecinos.remove(vecino6);
+        }
+        listaVecinos.add(n);
+        vecino6 = n;
+    }
+}
 public class AEstrella {
  
     //Mundo sobre el que se debe calcular A*
@@ -52,9 +130,54 @@ public class AEstrella {
 
         boolean encontrado = false;
         int result = -1;
-        
         //AQUÍ ES DONDE SE DEBE IMPLEMENTAR A*
-       
+        boolean esLaMeta;
+        ArrayList<Nodo> listaInterior = new ArrayList<Nodo>();
+        ArrayList<Nodo> listaFrontera = new ArrayList<Nodo>();
+        Coordenada posInicio = mundo.getCaballero(); // CONSEGUIMOS EL VALOR DEL ORIGEN
+        Coordenada posFinal = mundo.getDragon(); // Y EL VALOR DEL FINAL DEL MAPA
+        listaInterior.clear();
+        int g = posInicio.getX() + posInicio.getY();
+        int h = posFinal.getX() + posFinal.getY();
+        Nodo nodoInicio = new Nodo(posInicio, g, h); // CREAMOS EL NODO INICIAL
+        listaFrontera.add(nodoInicio); // Y LO AÑADIMOS A LISTAFRONTERA
+        while(listaFrontera.size() != 0){
+            //Obtenemos de listaFrontera el nodo con menor F
+            // CUANDO ESTE IMPLEMENTADO PONER TODO ESTO EN UN METODO AUXILIAR
+            Nodo actual = null;
+            if(listaFrontera.size() == 1){
+                actual = listaFrontera.get(0);
+            }
+            else{
+                int pos = 0;
+                for(int i = 0; i < listaFrontera.size(); i++){
+                    if(listaFrontera.get(pos).getF() >= listaFrontera.get(i).getF()){
+                        pos = i;
+                    }
+                }
+                actual = listaFrontera.get(pos);
+            }
+            // AHORA TENGO QUE COMPROBAR SI EL NODO ACTUAL ES META
+            esLaMeta = false;
+            if(actual.getCoordenada().getX() == posFinal.getX() 
+                    && actual.getCoordenada().getY() == posFinal.getY()){
+                esLaMeta = true;
+            }
+            // 
+            if(esLaMeta){
+                // reconstruir el camino desde la meta al inicio siguiento los punteros
+            }
+            else{
+                // borrar de listaFrontera actual
+                listaFrontera.remove(actual);
+                listaInterior.add(actual);
+                for(Nodo n : actual.getListaVecinos()){
+                    boolean esMejorVecino;
+                    //float distanciaDesdePrincipioAlVecino = 
+                }
+            }
+        }
+
 
         //Si ha encontrado la solución, es decir, el camino, muestra las matrices camino y camino_expandidos y el número de nodos expandidos
         if(encontrado){
