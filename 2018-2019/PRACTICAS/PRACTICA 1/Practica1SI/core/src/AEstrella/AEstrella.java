@@ -15,7 +15,9 @@ import java.util.ArrayList;
  *
  * @author mirse
  */
+
 class Nodo{
+    Nodo padre;
     Coordenada c;
     int f;
     int g;
@@ -34,10 +36,16 @@ class Nodo{
         f = g + h;
         listaVecinos = new ArrayList<Nodo>();
     }
+    public Nodo getPadre(){return padre; }
+    public void setPadre(Nodo p) {padre = p;}
     public Coordenada getCoordenada(){ return c; }
+    public void setCoordenada(Coordenada c){ this.c = c;}
     public int getG(){ return g; }
+    public void setG(int g) {this.g = g;}
     public int getH(){ return h; }
+    public void setH(int h) {this.h = h;}
     public int getF(){ return f; }
+    public void setF(int f) {this.f = f;}
     public ArrayList<Nodo> getListaVecinos() { return listaVecinos; }
     public Nodo getVecino1(){ return vecino1; }
     public void setVecino1(Nodo n){
@@ -86,6 +94,13 @@ class Nodo{
         }
         listaVecinos.add(n);
         vecino6 = n;
+    }
+    // PREGUNTAR SI ES ASI O SI NO ES ASI
+    double getDistanciaEntre(Nodo n){
+        double distancia = 0;
+        //Math.sqrt(Math.pow(c.row - row,2) + Math.pow(c.column - row,2));
+        distancia = Math.sqrt(Math.pow(this.c.getX() - n.c.getX(), 2) + Math.pow(this.c.getY() - n.c.getY() ,2));
+        return distancia;
     }
 }
 public class AEstrella {
@@ -141,12 +156,13 @@ public class AEstrella {
         int h = posFinal.getX() + posFinal.getY();
         Nodo nodoInicio = new Nodo(posInicio, g, h); // CREAMOS EL NODO INICIAL
         listaFrontera.add(nodoInicio); // Y LO AÑADIMOS A LISTAFRONTERA
+       
         while(listaFrontera.size() != 0){
             //Obtenemos de listaFrontera el nodo con menor F
             // CUANDO ESTE IMPLEMENTADO PONER TODO ESTO EN UN METODO AUXILIAR
-            Nodo actual = null;
+            Nodo n = null;
             if(listaFrontera.size() == 1){
-                actual = listaFrontera.get(0);
+                n = listaFrontera.get(0);
             }
             else{
                 int pos = 0;
@@ -155,25 +171,46 @@ public class AEstrella {
                         pos = i;
                     }
                 }
-                actual = listaFrontera.get(pos);
+                n = listaFrontera.get(pos);
             }
             // AHORA TENGO QUE COMPROBAR SI EL NODO ACTUAL ES META
             esLaMeta = false;
-            if(actual.getCoordenada().getX() == posFinal.getX() 
-                    && actual.getCoordenada().getY() == posFinal.getY()){
+            if(n.getCoordenada().getX() == posFinal.getX() 
+                    && n.getCoordenada().getY() == posFinal.getY()){
                 esLaMeta = true;
             }
             // 
             if(esLaMeta){
                 // reconstruir el camino desde la meta al inicio siguiento los punteros
+                
             }
             else{
                 // borrar de listaFrontera actual
-                listaFrontera.remove(actual);
-                listaInterior.add(actual);
-                for(Nodo n : actual.getListaVecinos()){
-                    boolean esMejorVecino;
-                    //float distanciaDesdePrincipioAlVecino = 
+                listaFrontera.remove(n);
+                listaInterior.add(n);
+                for(Nodo m : n.getListaVecinos()){
+                    //boolean esMejorVecino;
+                    // hay que calcular una g' que no se mucho lo que es
+                    double gPrima = n.getG() + n.getDistanciaEntre(m);
+                    if(!listaFrontera.contains(m)){
+                        m.setCoordenada(n.getCoordenada());
+                        m.setF(n.getF());
+                        m.setH(n.getH());
+                        m.setG(n.getG());
+                        m.setPadre(n);
+                        listaFrontera.add(m);
+                    }
+                    else{
+                        // Verificamos si el nuevo camino es mejor
+                        if(gPrima < m.getG()){
+                            m.setPadre(n);
+                            // recalculamos f y g del nodo m
+                            int gm = m.c.getX() + m.c.getY();
+                            int fm = gm + h;
+                            m.setG(gm);
+                            m.setF(fm);
+                        }
+                    }
                 }
             }
         }
