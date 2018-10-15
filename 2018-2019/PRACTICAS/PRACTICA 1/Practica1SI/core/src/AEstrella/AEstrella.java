@@ -15,93 +15,35 @@ import java.util.ArrayList;
  *
  * @author mirse
  */
-
 class Nodo{
-    Nodo padre;
-    Coordenada c;
-    int f;
-    int g;
-    int h;
-    ArrayList<Nodo> listaVecinos;
-    Nodo vecino1;
-    Nodo vecino2;
-    Nodo vecino3;
-    Nodo vecino4;
-    Nodo vecino5;
-    Nodo vecino6;
-    public Nodo(Coordenada coord, int g, int h){
-        c = coord;
-        this.g = g;
-        this.h = h;
+    private Coordenada actual;
+    private int g;
+    private float h;
+    private float f;
+    private Nodo padre;
+    // CONSTRUCTOR DE NODO PARA EL NODO INICIAL
+    public Nodo(Coordenada actual, float heuristica){
+        this.actual = actual;
+        g = 0;
+        h = heuristica;
         f = g + h;
-        listaVecinos = new ArrayList<Nodo>();
+        padre = null;
     }
-    public Nodo getPadre(){return padre; }
-    public void setPadre(Nodo p) {padre = p;}
-    public Coordenada getCoordenada(){ return c; }
-    public void setCoordenada(Coordenada c){ this.c = c;}
+    public Nodo(Coordenada actual, int g, float heuristica, Nodo padre){
+        this.actual = actual;
+        this.g = g;
+        h = heuristica;
+        this.padre = padre;
+    }
+    public Coordenada getCoordenadaActual(){ return actual; }
+    public void setCoordenadaActual(Coordenada c){ actual = c; }
     public int getG(){ return g; }
-    public void setG(int g) {this.g = g;}
-    public int getH(){ return h; }
-    public void setH(int h) {this.h = h;}
-    public int getF(){ return f; }
-    public void setF(int f) {this.f = f;}
-    public ArrayList<Nodo> getListaVecinos() { return listaVecinos; }
-    public Nodo getVecino1(){ return vecino1; }
-    public void setVecino1(Nodo n){
-        if(listaVecinos.contains(vecino1)){
-            listaVecinos.remove(vecino1);
-        }
-        listaVecinos.add(n);
-        vecino1 = n;
-    }
-    public Nodo getVecino2(){ return vecino2; }
-    public void setVecino2(Nodo n){
-        if(listaVecinos.contains(vecino2)){
-            listaVecinos.remove(vecino2);
-        }
-        listaVecinos.add(n);
-        vecino2 = n;
-    }
-    public Nodo getVecino3(){ return vecino3; }
-    public void setVecino3(Nodo n){
-        if(listaVecinos.contains(vecino3)){
-            listaVecinos.remove(vecino3);
-        }
-        listaVecinos.add(n);
-        vecino3 = n;
-    }
-    public Nodo getVecino4(){ return vecino4; }
-    public void setVecino4(Nodo n){
-        if(listaVecinos.contains(vecino4)){
-            listaVecinos.remove(vecino4);
-        }
-        listaVecinos.add(n);
-        vecino4 = n;
-    }
-    public Nodo getVecino5(){ return vecino5; }
-    public void setVecino5(Nodo n){
-        if(listaVecinos.contains(vecino5)){
-            listaVecinos.remove(vecino5);
-        }
-        listaVecinos.add(n);
-        vecino5 = n;
-    }
-    public Nodo getVecino6(){ return vecino6; }
-    public void setVecino6(Nodo n){
-        if(listaVecinos.contains(vecino6)){
-            listaVecinos.remove(vecino6);
-        }
-        listaVecinos.add(n);
-        vecino6 = n;
-    }
-    // PREGUNTAR SI ES ASI O SI NO ES ASI
-    double getDistanciaEntre(Nodo n){
-        double distancia = 0;
-        //Math.sqrt(Math.pow(c.row - row,2) + Math.pow(c.column - row,2));
-        distancia = Math.sqrt(Math.pow(this.c.getX() - n.c.getX(), 2) + Math.pow(this.c.getY() - n.c.getY() ,2));
-        return distancia;
-    }
+    public void setG(int g){ this.g = g; }
+    public float getH(){ return h; }
+    public void setH(float h){ this.h = h; }
+    public Nodo getCoordenadaPadre(){ return padre; }
+    public void setPadre(Nodo p){ padre = p; }
+    public float getF(){ return f; }
 }
 public class AEstrella {
  
@@ -140,6 +82,114 @@ public class AEstrella {
                 }
     }
     
+    public float heuristica0(){
+        return 0;
+    }
+    public Nodo obtenerNodoMenorF(ArrayList<Nodo> ns){
+        Nodo n = null;
+        if(ns.size() == 1){
+            n = ns.get(0);
+        }
+        else{
+            int pos = 0;
+            for(int i = 0; i < ns.size(); i++){
+		if(ns.get(pos).getF() >= ns.get(i).getF()){
+			pos = i;
+		}
+            }
+            n = ns.get(pos);
+        }
+        return n;
+    }
+    
+    public boolean esMeta(Nodo n, Coordenada meta){
+        return n.getCoordenadaActual().getX() == meta.getX() 
+                && n.getCoordenadaActual().getY() == meta.getY();
+    }
+    
+    public boolean esFilaPar(Nodo n){
+        boolean par = false;
+        if(n.getCoordenadaActual().getY() % 2 == 0){
+            par = true;
+        }
+        return par;
+    }
+    
+    boolean esCoordenadaInalcanzable(Coordenada c, Coordenada ci){
+        boolean inalcanzable = false;
+        if(c.getX() == ci.getX() && c.getY() == ci.getY()){
+            inalcanzable = true;
+        }
+        return inalcanzable;
+    }
+    public int getValorCeldaHijo(Coordenada c){
+        char elemento = mundo.getCelda(c.getX(), c.getY());
+        int valor = -1;
+        if(elemento == 'c'){
+            valor = 1;
+        }
+        else{
+            if(elemento == 'h'){
+                valor = 2; 
+            }
+            else{
+                if(elemento == 'a'){
+                    valor = 3;
+                }
+                else{
+                    if(elemento == 'p' || elemento == 'b'){
+                        valor = 0;
+                    }
+                }
+            }
+        }
+        return valor;
+    }
+    // EN ESTE METODO SE SACAN LOS POSIBLES HIJOS DE UN NODO 
+    // Y SE LE ACTUALIZAN EL VALOR DE G F Y EL PADRE
+    public ArrayList<Nodo> getHijos(Nodo n){
+        ArrayList<Nodo> hijos = new ArrayList<Nodo>();
+        Coordenada actual = n.getCoordenadaActual();
+        boolean par = esFilaPar(n);
+        boolean inalcazable1, inalcazable2;
+        int valorCeldaHijo;
+        Coordenada [] cs = {new Coordenada(-1, -1), new Coordenada(-1, 0), 
+            new Coordenada(-1, 1), new Coordenada(0, 1), new Coordenada(1, 1),
+            new Coordenada(1, 0), new Coordenada(1, -1), new Coordenada(0, -1)};
+        if(par){
+            Coordenada inalcanzable_Par_1 = new Coordenada(actual.getX() - 1, actual.getY() - 1);
+            Coordenada inalcanzable_Par_2 = new Coordenada(actual.getX() - 1, actual.getY() + 1);
+            for(int i = 0; i < cs.length; i++){
+                Coordenada coordenadaHijo = new Coordenada(cs[i].getX() + actual.getX(), cs[i].getY() + actual.getY());
+                inalcazable1 = esCoordenadaInalcanzable(coordenadaHijo, inalcanzable_Par_1);
+                inalcazable2 = esCoordenadaInalcanzable(coordenadaHijo, inalcanzable_Par_2);
+                if(!inalcazable1 && !inalcazable1){
+                    valorCeldaHijo = getValorCeldaHijo(coordenadaHijo);
+                    if(valorCeldaHijo != 0){
+                        Nodo hijo = new Nodo(coordenadaHijo, n.getG() + valorCeldaHijo, heuristica0(), n);
+                        hijos.add(hijo);
+                    }
+                }
+            }
+        }
+        else{
+            Coordenada inalcanzable_Impar_1 = new Coordenada(actual.getX() + 1, actual.getY() - 1);
+            Coordenada inalcanzable_Impar_2 = new Coordenada(actual.getX() + 1, actual.getY() + 1);
+            for(int i = 0; i < cs.length; i++){
+                Coordenada coordenadaHijo = new Coordenada(cs[i].getX() + actual.getX(), cs[i].getY() + actual.getY());
+                inalcazable1 = esCoordenadaInalcanzable(coordenadaHijo, inalcanzable_Impar_1);
+                inalcazable2 = esCoordenadaInalcanzable(coordenadaHijo, inalcanzable_Impar_2);
+                if(!inalcazable1 && !inalcazable1){
+                    valorCeldaHijo = getValorCeldaHijo(coordenadaHijo);
+                    if(valorCeldaHijo != 0){
+                        Nodo hijo = new Nodo(coordenadaHijo, n.getG() + valorCeldaHijo, heuristica0(), n);
+                        hijos.add(hijo);
+                    }
+                }
+            }
+        }
+        return hijos;
+    }
     //Calcula el A*
     public int CalcularAEstrella(){
 
@@ -147,75 +197,34 @@ public class AEstrella {
         int result = -1;
         //AQUÍ ES DONDE SE DEBE IMPLEMENTAR A*
         boolean esLaMeta;
+        Coordenada inicio = mundo.getCaballero();
+        Coordenada destino = mundo.getDragon();
         ArrayList<Nodo> listaInterior = new ArrayList<Nodo>();
         ArrayList<Nodo> listaFrontera = new ArrayList<Nodo>();
-        Coordenada posInicio = mundo.getCaballero(); // CONSEGUIMOS EL VALOR DEL ORIGEN
-        Coordenada posFinal = mundo.getDragon(); // Y EL VALOR DEL FINAL DEL MAPA
-        listaInterior.clear();
-        int g = posInicio.getX() + posInicio.getY();
-        int h = posFinal.getX() + posFinal.getY();
-        Nodo nodoInicio = new Nodo(posInicio, g, h); // CREAMOS EL NODO INICIAL
-        listaFrontera.add(nodoInicio); // Y LO AÑADIMOS A LISTAFRONTERA
-       
+        float heuristica = heuristica0();
+        Nodo inicial = new Nodo(inicio, heuristica);
+        listaFrontera.add(inicial);
         while(listaFrontera.size() != 0){
-            //Obtenemos de listaFrontera el nodo con menor F
-            // CUANDO ESTE IMPLEMENTADO PONER TODO ESTO EN UN METODO AUXILIAR
-            Nodo n = null;
-            if(listaFrontera.size() == 1){
-                n = listaFrontera.get(0);
-            }
-            else{
-                int pos = 0;
-                for(int i = 0; i < listaFrontera.size(); i++){
-                    if(listaFrontera.get(pos).getF() >= listaFrontera.get(i).getF()){
-                        pos = i;
-                    }
-                }
-                n = listaFrontera.get(pos);
-            }
-            // AHORA TENGO QUE COMPROBAR SI EL NODO ACTUAL ES META
-            esLaMeta = false;
-            if(n.getCoordenada().getX() == posFinal.getX() 
-                    && n.getCoordenada().getY() == posFinal.getY()){
-                esLaMeta = true;
-            }
-            // 
+            Nodo n = obtenerNodoMenorF(listaFrontera); // Obtenemos el nodo con menor F
+            esLaMeta = esMeta(n, destino);
             if(esLaMeta){
-                // reconstruir el camino desde la meta al inicio siguiento los punteros
-                
+                // reconstruimos el camino
             }
             else{
-                // borrar de listaFrontera actual
                 listaFrontera.remove(n);
                 listaInterior.add(n);
-                for(Nodo m : n.getListaVecinos()){
-                    //boolean esMejorVecino;
-                    // hay que calcular una g' que no se mucho lo que es
-                    double gPrima = n.getG() + n.getDistanciaEntre(m);
+                for(Nodo m : getHijos(n)){
                     if(!listaFrontera.contains(m)){
-                        m.setCoordenada(n.getCoordenada());
-                        m.setF(n.getF());
-                        m.setH(n.getH());
-                        m.setG(n.getG());
-                        m.setPadre(n);
                         listaFrontera.add(m);
                     }
                     else{
-                        // Verificamos si el nuevo camino es mejor
-                        if(gPrima < m.getG()){
-                            m.setPadre(n);
-                            // recalculamos f y g del nodo m
-                            int gm = m.c.getX() + m.c.getY();
-                            int fm = gm + h;
-                            m.setG(gm);
-                            m.setF(fm);
-                        }
+                       // if(){ 
+                            // CONSULTAR ESTA PARTE
+                       // }
                     }
                 }
             }
         }
-
-
         //Si ha encontrado la solución, es decir, el camino, muestra las matrices camino y camino_expandidos y el número de nodos expandidos
         if(encontrado){
             //Mostrar las soluciones
