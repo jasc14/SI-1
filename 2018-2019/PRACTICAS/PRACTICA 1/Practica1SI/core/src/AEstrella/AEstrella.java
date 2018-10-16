@@ -41,9 +41,14 @@ class Nodo{
     public void setG(int g){ this.g = g; }
     public float getH(){ return h; }
     public void setH(float h){ this.h = h; }
-    public Nodo getCoordenadaPadre(){ return padre; }
+    public Nodo getPadre(){ return padre; }
     public void setPadre(Nodo p){ padre = p; }
     public float getF(){ return f; }
+    public String toString(){
+        String cad = "";
+        cad = "(" + actual.getX() + ", " + actual.getY() + ")";
+        return cad;
+    }
 }
 public class AEstrella {
  
@@ -81,7 +86,27 @@ public class AEstrella {
                     camino_expandido[j][i] = -1;
                 }
     }
-    
+    public boolean coordenadasIguales(Coordenada c1, Coordenada c2){
+        boolean iguales = false;
+        if(c1.getX() == c2.getX() && c1.getY() == c2.getY()){
+            iguales = true;
+        }
+        return iguales;
+    }
+    public ArrayList<Nodo> reconstruirCamino(Nodo nodoFinal, ArrayList<Nodo> ns){
+        ArrayList<Nodo> camino = new ArrayList<Nodo>();
+        boolean iguales;
+        Nodo actual = nodoFinal;
+        camino.add(nodoFinal);
+        for(int i = ns.size(); i >= 0 && ns.get(i).getPadre() != null; i++){
+            iguales = coordenadasIguales(ns.get(i).getPadre().getCoordenadaActual(), actual.getCoordenadaActual());
+            if(iguales){
+                camino.add(ns.get(i).getPadre());
+                actual = ns.get(i).getPadre();
+            }
+        }
+        return camino;
+    }
     public float heuristica0(){
         return 0;
     }
@@ -115,7 +140,7 @@ public class AEstrella {
         return par;
     }
     
-    boolean esCoordenadaInalcanzable(Coordenada c, Coordenada ci){
+    public boolean esCoordenadaInalcanzable(Coordenada c, Coordenada ci){
         boolean inalcanzable = false;
         if(c.getX() == ci.getX() && c.getY() == ci.getY()){
             inalcanzable = true;
@@ -163,7 +188,7 @@ public class AEstrella {
                 Coordenada coordenadaHijo = new Coordenada(cs[i].getX() + actual.getX(), cs[i].getY() + actual.getY());
                 inalcazable1 = esCoordenadaInalcanzable(coordenadaHijo, inalcanzable_Par_1);
                 inalcazable2 = esCoordenadaInalcanzable(coordenadaHijo, inalcanzable_Par_2);
-                if(!inalcazable1 && !inalcazable1){
+                if(!inalcazable1 && !inalcazable2){
                     valorCeldaHijo = getValorCeldaHijo(coordenadaHijo);
                     if(valorCeldaHijo != 0){
                         Nodo hijo = new Nodo(coordenadaHijo, n.getG() + valorCeldaHijo, heuristica0(), n);
@@ -179,7 +204,7 @@ public class AEstrella {
                 Coordenada coordenadaHijo = new Coordenada(cs[i].getX() + actual.getX(), cs[i].getY() + actual.getY());
                 inalcazable1 = esCoordenadaInalcanzable(coordenadaHijo, inalcanzable_Impar_1);
                 inalcazable2 = esCoordenadaInalcanzable(coordenadaHijo, inalcanzable_Impar_2);
-                if(!inalcazable1 && !inalcazable1){
+                if(!inalcazable1 && !inalcazable2){
                     valorCeldaHijo = getValorCeldaHijo(coordenadaHijo);
                     if(valorCeldaHijo != 0){
                         Nodo hijo = new Nodo(coordenadaHijo, n.getG() + valorCeldaHijo, heuristica0(), n);
@@ -190,12 +215,31 @@ public class AEstrella {
         }
         return hijos;
     }
+    public ArrayList<Nodo> obtenerNodosMenorG(ArrayList<Nodo> ns){
+        ArrayList<Nodo> nodos = new ArrayList<Nodo>();
+        int valorMinimo = 0;
+        int pos = 0;
+        for(int i = 0; i < ns.size(); i++){
+            if(ns.get(pos).getG() < ns.get(i).getG()){
+                valorMinimo = ns.get(pos).getG();
+                pos = i;
+            }
+        }
+        for(int i = 0; i < ns.size(); i++){
+            if(ns.get(i).getG() == valorMinimo){
+                nodos.add(ns.get(i));
+            }
+        }
+        return nodos;
+    }
     //Calcula el A*
     public int CalcularAEstrella(){
 
         boolean encontrado = false;
         int result = -1;
         //AQUÍ ES DONDE SE DEBE IMPLEMENTAR A*
+        
+        ArrayList<Nodo> caminoFinal = new ArrayList<Nodo>();
         boolean esLaMeta;
         Coordenada inicio = mundo.getCaballero();
         Coordenada destino = mundo.getDragon();
@@ -204,27 +248,39 @@ public class AEstrella {
         float heuristica = heuristica0();
         Nodo inicial = new Nodo(inicio, heuristica);
         listaFrontera.add(inicial);
-        while(listaFrontera.size() != 0){
+        while(listaFrontera.size() != 0 || result == -1){
             Nodo n = obtenerNodoMenorF(listaFrontera); // Obtenemos el nodo con menor F
             esLaMeta = esMeta(n, destino);
             if(esLaMeta){
-                // reconstruimos el camino
+                caminoFinal = reconstruirCamino(n, listaInterior);
+                result = 0;
             }
             else{
                 listaFrontera.remove(n);
                 listaInterior.add(n);
                 for(Nodo m : getHijos(n)){
-                    if(!listaFrontera.contains(m)){
-                        listaFrontera.add(m);
-                    }
-                    else{
-                       // if(){ 
-                            // CONSULTAR ESTA PARTE
-                       // }
-                    }
+                    if(!listaInterior.contains(m)){    
+                        if(!listaFrontera.contains(m)){
+                            listaFrontera.add(m);
+                        }
+                        else{
+                            Nodo nodoMenorG = null;
+                            ArrayList<Nodo> nodosMenorG = new ArrayList<Nodo>();
+                            nodosMenorG = obtenerNodosMenorG(listaFrontera);
+                            nodoMenorG = nodosMenorG.get(0);
+                            m.setPadre(nodoMenorG.getPadre());
+                            nodosMenorG.clear();
+                        }
+                    }    
                 }
             }
         }
+        
+        // BUCLE QUE HE CREADO PARA VER SI ESTA EL CAMINO BIEN IMPLEMENTADO
+        for(int i = 0; i < caminoFinal.size(); i++){
+            System.out.print(caminoFinal.get(i));
+        }
+        
         //Si ha encontrado la solución, es decir, el camino, muestra las matrices camino y camino_expandidos y el número de nodos expandidos
         if(encontrado){
             //Mostrar las soluciones
