@@ -17,14 +17,12 @@ class Nodo{
     private float h;
     private float f;
     private Nodo padre;
-    boolean visitado;
     // CONSTRUCTOR DE NODO PARA EL NODO INICIAL
     public Nodo(Coordenada actual, float heuristica){
         this.actual = actual;
         g = 0;
         h = heuristica;
         f = g + h;
-        visitado = false;
         padre = null;
     }
     public Nodo(Coordenada actual, int g, float heuristica, Nodo padre){
@@ -32,7 +30,6 @@ class Nodo{
         this.g = g;
         h = heuristica;
         f = g + h;
-        visitado = false;
         this.padre = padre;
     }
     public Nodo (Nodo n){
@@ -41,7 +38,6 @@ class Nodo{
         h = n.h;
         f = n.f;
         padre = n.padre;
-        visitado = false;
     }
     public Coordenada getCoordenadaActual(){ return actual; }
     public void setCoordenadaActual(Coordenada c){ actual = c; }
@@ -129,9 +125,6 @@ public class AEstrella  {
         return iguales;
     }
     
-    public float heuristica0(){
-        return 0;
-    }
     public Nodo obtenerNodoMenorF(ArrayList<Nodo> ns){
         Nodo n = null;
         if(ns.size() == 1){
@@ -192,7 +185,11 @@ public class AEstrella  {
         }
         return valor;
     }
-    public ArrayList<Nodo> getHijos(Nodo n, ArrayList<Nodo> li){ // ESTE METODO DEVUELVE LOS NODOS HIJOS QUE NO ESTAN EN LISTAINTERIOR
+    // CAMBIAR LA HEURISTICA
+    public ArrayList<Nodo> getHijos(Nodo n, ArrayList<Nodo> li, Coordenada finalcoord){ // ESTE METODO DEVUELVE LOS NODOS HIJOS QUE NO ESTAN EN LISTAINTERIOR
+        //float heuristica = heuristicaManhattan(n.getCoordenadaActual(), finalcoord);
+        float heuristica = heuristica0();
+        //float heuristica = heuristicaEuclidea(n.getCoordenadaActual(), finalcoord);
         ArrayList<Nodo> hijos = new ArrayList<Nodo>();
         Coordenada actual = n.getCoordenadaActual();
         Nodo hijo;
@@ -213,7 +210,7 @@ public class AEstrella  {
                     valorCeldaHijo = getValorCeldaHijo(coordenadaHijo);
                     if(valorCeldaHijo != 0){    
                         if(!existeEnInterior(coordenadaHijo, li)){
-                            hijo = new Nodo(coordenadaHijo, n.getG() + valorCeldaHijo, heuristica0(), n);
+                            hijo = new Nodo(coordenadaHijo, n.getG() + valorCeldaHijo, heuristica, n);
                             hijos.add(hijo);
                         }
                     }    
@@ -231,7 +228,7 @@ public class AEstrella  {
                     valorCeldaHijo = getValorCeldaHijo(coordenadaHijo);
                     if(valorCeldaHijo != 0){    
                         if(!existeEnInterior(coordenadaHijo, li)){
-                            hijo = new Nodo(coordenadaHijo, n.getG() + valorCeldaHijo, heuristica0(), n);
+                            hijo = new Nodo(coordenadaHijo, n.getG() + valorCeldaHijo, heuristica, n);
                             hijos.add(hijo);
                         }
                     }    
@@ -240,43 +237,60 @@ public class AEstrella  {
         }
         return hijos;
     }
-    public void reconstruirCamino(ArrayList<Nodo> li, char c[][],int ce [][],int expandidos){ // falta que me haga lo del camino expandido y todo esa mierda
+    public void reconstruirCamino(ArrayList<Nodo> li, char c[][]){ // falta que me haga lo del camino expandido y todo esa mierda
         // PARA RECONSTRUIR EL CAMINO TENGO QUE
         // DESDE EL NODO FINAL VOLVER AL PRIMERO (EL QUE TENGA COMO PADRE NULL)
-        //int expandidosaux = expandidos;
         Nodo actual = null;
         Nodo padre = null;
-        Nodo actualAux = null;
         actual = li.get(li.size() - 1);
         padre = actual.getPadre(); // con este tengo que buscar la coordenada actual del nodo padre
         while(padre != null){
             c[actual.getCoordenadaActual().getY()][actual.getCoordenadaActual().getX()] = 'X';
-            //ce[actual.getCoordenadaActual().getY()][actual.getCoordenadaActual().getX()] = expandidosaux;
             actual = padre;
             padre = actual.getPadre();
         }
     }
+    public float heuristica0(){
+        return 0;
+    }
+    public float heuristicaManhattan(Coordenada inicial, Coordenada destino){
+       return Math.abs(inicial.getX() - destino.getX()) + Math.abs(inicial.getY() - destino.getY());
+    }
+    public float heuristicaEuclidea(Coordenada inicial, Coordenada destino){
+        float x = (float) Math.pow(destino.getX() - inicial.getX(), 2);
+        float y = (float) Math.pow(destino.getY() - inicial.getY(), 2);
+        return (float) Math.sqrt(x + y);
+    }
+    public float heuristicaHexagonales(){
+        return 0;
+    }
     //Calcula el A*
     
     public int CalcularAEstrella(){
-
+        // LO CALCULA BIEN PERO LE PONE UNO MAS DE COSTE_TOTAL
+        // REVISAR POR QUE EL CAMINO ME SALE UN NUMERO MAS DE LO QUE DEBERIA
         boolean encontrado = false;
         int result = -1;
+        expandidos = 0;
         Coordenada inicio = mundo.getCaballero();
         Coordenada destino = mundo.getDragon();
         ArrayList<Nodo> hijos = new ArrayList<Nodo>();
         ArrayList<Nodo> listaInterior = new ArrayList<Nodo>();
         ArrayList<Nodo> listaFrontera = new ArrayList<Nodo>();
         float heuristica = heuristica0();
+        //float heuristica = heuristicaManhattan(inicio, destino);
+        //float heuristica = heuristicaEuclidea(inicio, destino);
         Nodo inicial = new Nodo(inicio, heuristica);
         listaFrontera.add(inicial);
         while(listaFrontera.size() != 0 && result == -1){
             Nodo n = obtenerNodoMenorF(listaFrontera);
+            camino_expandido[n.getCoordenadaActual().getY()][n.getCoordenadaActual().getX()] = expandidos;
+            expandidos++;
             boolean esMeta = esMeta(n, destino);
             if(esMeta){
                 listaInterior.add(n);
                 coste_total = n.getF();
-                reconstruirCamino(listaInterior, camino, camino_expandido, expandidos);
+                reconstruirCamino(listaInterior, camino);
                 encontrado = true;
                 result = 0;
             }
@@ -284,7 +298,7 @@ public class AEstrella  {
                 listaFrontera.remove(n);
                 listaInterior.add(n);
                 // Obtenemos los hijos m de n que no esten en lista interior
-                hijos = getHijos(n, listaInterior);
+                hijos = getHijos(n, listaInterior, destino);
                 for(Nodo m : hijos){
                     if(existeEnFrontera(m, listaFrontera) == false){ // si el nodo no esta en listaFrontera lo añadimos
                         listaFrontera.add(m);
@@ -292,20 +306,15 @@ public class AEstrella  {
                     else{
                         Nodo enFrontera = existeEnFrontera(listaFrontera, m.getCoordenadaActual());
                         if(m.getG() < enFrontera.getG()){
-                            // tengo que asignar al hijo todos los valores de el enFrontera
-                            m.setCoordenadaActual(enFrontera.getCoordenadaActual());
-                            m.setG(enFrontera.getG());
-                            m.setH(enFrontera.getH());
-                            m.setF(enFrontera.getF());
                             listaFrontera.remove(enFrontera);
                             listaFrontera.add(m);
                         }
                     }
                 }
                 hijos.clear();
-                //expandidos++;
-            }
+            }            
         }
+        
         
         //Si ha encontrado la solución, es decir, el camino, muestra las matrices camino y camino_expandidos y el número de nodos expandidos
         if(encontrado){
