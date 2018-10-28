@@ -6,6 +6,8 @@
 package AEstrella;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  *
@@ -49,6 +51,23 @@ class Nodo{
     public void setPadre(Nodo p){ padre = p; }
     public float getF(){ return f; }
     public void setF(float f){ this.f = f; }
+}
+class Cubo{
+    private int x;
+    private int y;
+    private int z;
+    public Cubo(int vx, int vy, int vz){
+        x = vx;
+        y = vy;
+        z = vz;
+    }
+    public int getX(){ return x; }
+    public void setX(int vx){ x = vx; }
+    public int getY(){ return y; }
+    public void setY(int vy){ y = vy; }
+    public int getZ(){ return z; }
+    public void setZ(int vz){ z = vz; }
+    
 }
 public class AEstrella  {
  
@@ -162,7 +181,7 @@ public class AEstrella  {
         }
         return inalcanzable;
     }
-    public int getValorCeldaHijo(Coordenada c){ // tengo que ver si el valor de la celda destino se tien en cuenta
+    public int getValorCeldaHijo(Coordenada c){
         char elemento = mundo.getCelda(c.getX(), c.getY());
         int valor = -1;
         if(elemento == 'c' || elemento == 'd'){ // camino
@@ -185,14 +204,13 @@ public class AEstrella  {
         }
         return valor;
     }
-    // CAMBIAR LA HEURISTICA
-    public ArrayList<Nodo> getHijos(Nodo n, ArrayList<Nodo> li, Coordenada finalcoord){ // ESTE METODO DEVUELVE LOS NODOS HIJOS QUE NO ESTAN EN LISTAINTERIOR
-        //float heuristica = heuristicaManhattan(n.getCoordenadaActual(), finalcoord);
-        float heuristica = heuristica0();
-        //float heuristica = heuristicaEuclidea(n.getCoordenadaActual(), finalcoord);
+    
+    public ArrayList<Nodo> getHijos(Nodo n, ArrayList<Nodo> li, Coordenada finalcoord){ 
         ArrayList<Nodo> hijos = new ArrayList<Nodo>();
         Coordenada actual = n.getCoordenadaActual();
         Nodo hijo;
+        Cubo c1 = null;
+        Cubo c2 = null;
         int valorCeldaHijo;
         boolean par = esFilaPar(n);
         boolean inalcanzable1, inalcanzable2;
@@ -202,6 +220,8 @@ public class AEstrella  {
         if(par){
             Coordenada inalcanzable_Par_1 = new Coordenada(actual.getX() - 1, actual.getY() - 1);
             Coordenada inalcanzable_Par_2 = new Coordenada(actual.getX() - 1, actual.getY() + 1);
+
+            
             for(int i = 0; i < cs.length; i++){
                 Coordenada coordenadaHijo = new Coordenada(cs[i].getX() + actual.getX(), cs[i].getY() + actual.getY());
                 inalcanzable1 = esCoordenadaInalcanzable(coordenadaHijo, inalcanzable_Par_1);
@@ -210,6 +230,12 @@ public class AEstrella  {
                     valorCeldaHijo = getValorCeldaHijo(coordenadaHijo);
                     if(valorCeldaHijo != 0){    
                         if(!existeEnInterior(coordenadaHijo, li)){
+                            //float heuristica = heuristicaManhattan(coordenadaHijo, finalcoord);
+                            //float heuristica = heuristica0();
+                            //float heuristica = heuristicaEuclidea(coordenadaHijo, finalcoord);
+                            c1 = obtenerCubo(coordenadaHijo);
+                            c2 = obtenerCubo(finalcoord);
+                            float heuristica = heuristicaHexagonales(c1, c2);                          
                             hijo = new Nodo(coordenadaHijo, n.getG() + valorCeldaHijo, heuristica, n);
                             hijos.add(hijo);
                         }
@@ -220,6 +246,7 @@ public class AEstrella  {
         else{
             Coordenada inalcanzable_Impar_1 = new Coordenada(actual.getX() + 1, actual.getY() - 1);
             Coordenada inalcanzable_Impar_2 = new Coordenada(actual.getX() + 1, actual.getY() + 1);
+
             for(int i = 0; i < cs.length; i++){
                 Coordenada coordenadaHijo = new Coordenada(cs[i].getX() + actual.getX(), cs[i].getY() + actual.getY());
                 inalcanzable1 = esCoordenadaInalcanzable(coordenadaHijo, inalcanzable_Impar_1);
@@ -228,6 +255,12 @@ public class AEstrella  {
                     valorCeldaHijo = getValorCeldaHijo(coordenadaHijo);
                     if(valorCeldaHijo != 0){    
                         if(!existeEnInterior(coordenadaHijo, li)){
+                            //float heuristica = heuristicaManhattan(coordenadaHijo, finalcoord);
+                            //float heuristica = heuristica0();
+                            //float heuristica = heuristicaEuclidea(coordenadaHijo, finalcoord);
+                            c1 = obtenerCubo(coordenadaHijo);
+                            c2 = obtenerCubo(finalcoord);
+                            float heuristica = heuristicaHexagonales(c1, c2);
                             hijo = new Nodo(coordenadaHijo, n.getG() + valorCeldaHijo, heuristica, n);
                             hijos.add(hijo);
                         }
@@ -237,13 +270,11 @@ public class AEstrella  {
         }
         return hijos;
     }
-    public void reconstruirCamino(ArrayList<Nodo> li, char c[][]){ // falta que me haga lo del camino expandido y todo esa mierda
-        // PARA RECONSTRUIR EL CAMINO TENGO QUE
-        // DESDE EL NODO FINAL VOLVER AL PRIMERO (EL QUE TENGA COMO PADRE NULL)
+    public void reconstruirCamino(ArrayList<Nodo> li, char c[][]){
         Nodo actual = null;
         Nodo padre = null;
         actual = li.get(li.size() - 1);
-        padre = actual.getPadre(); // con este tengo que buscar la coordenada actual del nodo padre
+        padre = actual.getPadre();
         while(padre != null){
             c[actual.getCoordenadaActual().getY()][actual.getCoordenadaActual().getX()] = 'X';
             actual = padre;
@@ -261,14 +292,21 @@ public class AEstrella  {
         float y = (float) Math.pow(destino.getY() - inicial.getY(), 2);
         return (float) Math.sqrt(x + y);
     }
-    public float heuristicaHexagonales(){
-        return 0;
+    public float heuristicaHexagonales(Cubo a, Cubo b){
+        return (Math.abs(a.getX() - b.getX()) + Math.abs(a.getY() - b.getY()) + Math.abs(a.getZ() - b.getZ()))/2;
     }
-    //Calcula el A*
+    public Cubo obtenerCubo(Coordenada c){
+        int x, y, z;
+        Cubo cubo = null;
+        x = c.getX() - (c.getY() + c.getY()%2)/2;
+        z = c.getY();
+        y = -x - z;
+        cubo = new Cubo(x,y,z);
+        return cubo;
+    }
     
+    //Calcula el A*
     public int CalcularAEstrella(){
-        // LO CALCULA BIEN PERO LE PONE UNO MAS DE COSTE_TOTAL
-        // REVISAR POR QUE EL CAMINO ME SALE UN NUMERO MAS DE LO QUE DEBERIA
         boolean encontrado = false;
         int result = -1;
         expandidos = 0;
@@ -277,19 +315,23 @@ public class AEstrella  {
         ArrayList<Nodo> hijos = new ArrayList<Nodo>();
         ArrayList<Nodo> listaInterior = new ArrayList<Nodo>();
         ArrayList<Nodo> listaFrontera = new ArrayList<Nodo>();
-        float heuristica = heuristica0();
+        //float heuristica = heuristica0();
         //float heuristica = heuristicaManhattan(inicio, destino);
         //float heuristica = heuristicaEuclidea(inicio, destino);
+        Cubo c1 = obtenerCubo(inicio);
+        Cubo c2 = obtenerCubo(destino);
+        float heuristica = heuristicaHexagonales(c1, c2);
         Nodo inicial = new Nodo(inicio, heuristica);
         listaFrontera.add(inicial);
+        camino_expandido[inicial.getCoordenadaActual().getY()][inicial.getCoordenadaActual().getX()] = expandidos;
         while(listaFrontera.size() != 0 && result == -1){
+            
             Nodo n = obtenerNodoMenorF(listaFrontera);
-            camino_expandido[n.getCoordenadaActual().getY()][n.getCoordenadaActual().getX()] = expandidos;
-            expandidos++;
+            
             boolean esMeta = esMeta(n, destino);
             if(esMeta){
                 listaInterior.add(n);
-                coste_total = n.getF();
+                coste_total = n.getF(); 
                 reconstruirCamino(listaInterior, camino);
                 encontrado = true;
                 result = 0;
@@ -297,11 +339,12 @@ public class AEstrella  {
             else{
                 listaFrontera.remove(n);
                 listaInterior.add(n);
-                // Obtenemos los hijos m de n que no esten en lista interior
                 hijos = getHijos(n, listaInterior, destino);
                 for(Nodo m : hijos){
-                    if(existeEnFrontera(m, listaFrontera) == false){ // si el nodo no esta en listaFrontera lo añadimos
+                    if(existeEnFrontera(m, listaFrontera) == false){
                         listaFrontera.add(m);
+                        expandidos++;
+                        camino_expandido[m.getCoordenadaActual().getY()][m.getCoordenadaActual().getX()] = expandidos;                       
                     }
                     else{
                         Nodo enFrontera = existeEnFrontera(listaFrontera, m.getCoordenadaActual());
@@ -380,5 +423,6 @@ public class AEstrella  {
         return coste_total;
     }
 }
+
 
 
