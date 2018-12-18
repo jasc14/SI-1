@@ -36,6 +36,7 @@ public class Main {
         }
         return imagenes;
     }
+    
     public static void main(String[] args) {
         
         //Cargador de la BD de SI
@@ -99,17 +100,20 @@ public class Main {
         // ********
         
         // 3º ahora tenemos que lanzar adaboost tantas veces como categorias hay pasandole la categoria que queremos analzizar
-       // ArrayList<ArrayList<ClasificadorDebil>> clasificadorFuerte = new ArrayList<ArrayList<ClasificadorDebil>>(); // Un clasificador fuerte esta compuesto por
+        ArrayList<ArrayList<ClasificadorDebil>> clasificadorFuerte = new ArrayList<ArrayList<ClasificadorDebil>>(); // Un clasificador fuerte esta compuesto por
                                                                                                                     // un conjunto de clasificadores debiles esto crea un clasificador fuerte formado 
                                                                                                                     // por clasificadores debiles de cada una de las categorias
-        ArrayList<ClasificadorDebil> clasificadorFuerte = new ArrayList<ClasificadorDebil>();
+        //ArrayList<ClasificadorDebil> clasificadorFuerte = new ArrayList<ClasificadorDebil>();
         Adaboost a = new Adaboost();
         // TENGO QUE OBTENER EL VECTOR DE PESOS INICIAL, TODAS LAS POSICIONES ESTAN INICIALZADAS A 1 / numeroImagnesEntrenamiento
+        ArrayList vectorPesos = a.obtenerVectorDePesos(entrenamiento, false);
         for(int categoria = 0; categoria < 8; categoria++){
             // llamamos a adaboost
             // le pasamos la categoria que queremos analizar
             // le pasamos el conjunto de entrenamiento
-            clasificadorFuerte = a.algoritmoAdaboost(categoria, entrenamiento);
+            clasificadorFuerte = a.algoritmoAdaboost(categoria, entrenamiento, vectorPesos);
+            vectorPesos = a.obtenerVectorDePesos(entrenamiento, true);
+        
         }
     }
 }
