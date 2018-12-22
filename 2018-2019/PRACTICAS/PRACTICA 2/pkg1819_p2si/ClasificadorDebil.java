@@ -1,4 +1,13 @@
 /*
+        COMO CONSEGUIR EL PIXEL DE UNA IMAGEN
+        Imagen i = imagenes.get(i).get(j)
+        byte pixeles[] = i.getImageData()
+        int pixelImagen = Byte.toUnsignedInt(pixeles[getPixel()]);
+    */
+    // Recibe las imagenes y las busca por categoria, 
+    //generando asi una ArrayList de booleanos por cada categoria
+
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -10,80 +19,160 @@ import java.util.Random;
  *
  * @author Francisco Javier
  */
-public class ClasificadorDebil {
+public class ClasificadorDebil{
     private int pixel;
     private int umbral;
     private int direccion;
-    private float error;
-    private Random r;
-    private ArrayList<ArrayList<Boolean>> resultados;
-    public ClasificadorDebil(int pixel, int umbral, int direccion){
+    public double error;
+    public double confianza;
+    
+    public ClasificadorDebil(){
+        pixel = (int) (Math.random() * 784);
+        umbral = (int) (Math.random() * 256) - 127; 
+        int valor = (int) (Math.random() * 2);
+        if(valor == 0){
+            direccion = -1;
+        }
+        else{
+            direccion = 1;
+        }
+        error = 0.0;
+        confianza = 0.0;
+    }
+     public int getPixel(){
+        return pixel;
+    }
+    public int getUmbral(){
+        return umbral;
+    }
+    public int getDireccion(){
+        return direccion;
+    }
+    public double getError(){
+        return error;
+    }
+    public double getConfianza(){
+        return confianza;
+    }
+    public void setPixel(int pixel){
         this.pixel = pixel;
-        this.umbral = umbral;
-        this.direccion = direccion;
-        error = 0f;
-        resultados = new ArrayList<ArrayList<Boolean>>();
     }
-    public ClasificadorDebil generarClasificadorAzar(){
-       ClasificadorDebil cd = null;
-       int p, u, d;
-       Random r = new Random(System.currentTimeMillis());
-       p = r.nextInt(785);
-       u = r.nextInt(256);
-       d = (r.nextInt((1 - 0) + 1) + 0);
-       cd = new ClasificadorDebil(p,u,d);
-       return cd;
+    public void setUmbral(int umb){
+        umbral = umb;
     }
-    /*
-        COMO CONSEGUIR EL PIXEL DE UNA IMAGEN
-        Imagen i = imagenes.get(i).get(j)
-        byte pixeles[] = i.getImageData()
-        int pixelImagen = Byte.toUnsignedInt(pixeles[getPixel()]);
-    */
-    // Recibe las imagenes y las busca por categoria, 
-    //generando asi una ArrayList de booleanos por cada categoria
-    public ArrayList<ArrayList<Boolean>> aplicarClasificadorDebil(ArrayList<ArrayList<Imagen>> imagenes){
-        ArrayList<Boolean> resultadosPorCategoria = new ArrayList<Boolean>();
-        int pixelImagen;
-        for(int i = 0; i < imagenes.size(); i++){ // recorre todas las categorias
-            for(int j = 0; j < imagenes.get(i).size(); j++){ // recorre todas las imagenes j de cada categoria i
-                Imagen imagen = imagenes.get(i).get(j);
-                byte pixeles[] = imagen.getImageData();
-                pixelImagen = Byte.toUnsignedInt(pixeles[getPixel()]); // consigue el mismo pixel que el pasado como parametro getPixel()
-                if(getDireccion() == 0){
-                    if(pixelImagen <= getUmbral()){
-                        resultadosPorCategoria.add(true);
-                    }
-                    else{
-                        resultadosPorCategoria.add(false);
-                    }
+    public void setDireccion(int direc){
+        direccion = direc;
+    }
+    public void setError(double err){
+        error = err;
+    }
+    public void setConfianza(double conf){
+        confianza = conf;
+    }
+    public double Peso(){
+        //MNISTLoader ml = new MNISTLoader();
+        DBLoader ml = new DBLoader();
+        ml.loadDBFromPath("./db");
+        int numimagenes = 0;
+        double peso = 0.0;
+        
+        for(int i = 0; i < 8; i++){ // LO HE CAMBIADO DE <= 9
+            ArrayList d_imgs = ml.getImageDatabaseForDigit(i);
+            numimagenes = numimagenes + d_imgs.size(); //numero total de imagenes
+        }
+        peso = 1.0/numimagenes;
+        return peso;
+    }
+    public void Entrenar(ArrayList<Imagen> entrenamiento, double[] D, int numero){
+        int [] binario = new int[entrenamiento.size()];
+        
+        for(int j = 0; j < entrenamiento.size(); j++){ //train de las imgs
+            Imagen img = (Imagen) entrenamiento.get(j);
+
+            byte imageData[] = img.getImageData();
+            if(direccion == 1){
+                if(imageData[pixel] < umbral){
+                  binario[j] = 1;
                 }
                 else{
-                    if(pixelImagen >= getUmbral()){
-                        resultadosPorCategoria.add(true);
-                    }
-                    else{
-                        resultadosPorCategoria.add(false);
-                    }
+                  binario[j] = -1;
                 }
             }
-            resultados.add(resultadosPorCategoria);
-        }
-        return resultados;
-    }
-    // obtiene el error del clasificador
-    public void obtenerErrorClasificador(ArrayList<ArrayList<Boolean>> resEsperados, ArrayList<ArrayList<Float>> pesos){
-        for(int i = 0; i < resEsperados.size(); i++){
-            for(int j = 0; j < resEsperados.get(i).size(); j++){
-                if(resEsperados.get(i).get(j).equals(resultados.get(i).get(j)) == false){
-                    error += pesos.get(i).get(j);
+            else{
+                if(imageData[pixel] >= umbral){
+                   binario[j] = 1;
+                }
+                else{
+                   binario[j] = -1;
                 }
             }
         }
+        int es;
+        for(int i = 0; i < entrenamiento.size(); i++){
+            if(numero == entrenamiento.get(i).getDigitoPertenece()){ //Si pertenece con el digito de esa imagen
+                es = 1;
+            }
+            else{
+                es = -1;
+            }
+            //Tenemos que sumar el peso de donde ha fallado para calcular el error
+            if(binario[i] == 1 && es == -1){
+                this.error += D[i];
+            }
+            if(binario[i] == -1 && es == 1){
+                this.error += D[i];
+            }
+        }
+        double numerador = (double)(1 - error)/error;
+        confianza = (double) 0.5 * Math.log(numerador);   
     }
-    public int getPixel(){ return pixel; }
-    public int getUmbral(){ return umbral; }
-    public int getDireccion(){ return direccion; }
-    public float confianza(){ return (float) (0.5*(Math.log(1 - error/error))/Math.log(2)); }
-    public ArrayList<ArrayList<Boolean>> getResultados(){ return resultados; }
+    public void AplicaPixel(ArrayList<Imagen> vectorimg, int[] binario){
+       
+        for(int j = 0; j < vectorimg.size(); j++){ //train de las imgs
+            Imagen img = (Imagen) vectorimg.get(j);
+
+            byte imageData[] = img.getImageData();
+            //for (int k = 0; k < imageData.length; k++){
+             //     imageData[k] = (byte) (255 - imageData[k]);
+            //}
+            if(direccion == 1){
+                if(imageData[pixel] < umbral){
+                  binario[j] = 1;
+                }
+                else{
+                  binario[j] = -1;
+                }
+            }
+            else{
+                if(imageData[pixel] >= umbral){
+                   binario[j] = 1;
+                }
+                else{
+                   binario[j] = -1;
+                }
+            }
+        } 
+    }
+    public int AplicaImagen(Imagen img){
+        byte[] v_bytes = img.getImageData();
+        int r = 0;
+        
+        if(direccion == 1){
+            if(v_bytes[pixel] < umbral){
+                r = 1;
+            }
+            else if(v_bytes[pixel] >= umbral){
+                r = -1;
+            }
+        }
+        else{
+           if(v_bytes[pixel] < umbral){
+                r = -1;
+            }
+            else if(v_bytes[pixel] >= umbral){
+                r = 1;
+            } 
+        }
+        return r;
+    }
 }

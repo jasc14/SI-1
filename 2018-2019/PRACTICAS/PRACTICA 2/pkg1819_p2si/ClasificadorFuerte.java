@@ -5,10 +5,30 @@
  */
 package pkg1819_p2si;
 
+import java.util.ArrayList;
+
 /**
  *
  * @author Francisco Javier
  */
-public class ClasificadorFuerte {
+public class ClasificadorFuerte{
+    private ArrayList<ClasificadorDebil> cf;
+    private double confianza;
+    private double error;
     
+    public ClasificadorFuerte(){
+        cf = new ArrayList<ClasificadorDebil>();
+    }
+    public double getConfianza(){
+        return confianza;
+    }
+    public double getError(){
+        return error;
+    }
+    public ArrayList<ClasificadorDebil> getClasificadores(){
+        return cf;
+    }
+    public void anyadeClasificador(ClasificadorDebil cl){
+        cf.add(cl);
+    }
 }

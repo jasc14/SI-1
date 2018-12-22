@@ -5,36 +5,181 @@
  */
 package pkg1819_p2si;
 
+import java.io.File;
 import java.util.ArrayList;
 
 /**
  *
  * @author fidel
  */
-public class Main {
-
+class AdaBoost {
+    private ClasificadorFuerte cf;
+    
+    AdaBoost(){
+        cf = new ClasificadorFuerte();
+    }
+    
+    public ClasificadorFuerte getClasificadorFuerte(){
+        return cf;
+    }
+    
+    public ClasificadorDebil mejorClasificador(ArrayList<ClasificadorDebil> clasificadores){
+        ClasificadorDebil mejor = null;
+        
+        for(ClasificadorDebil cd : clasificadores){
+            if(mejor == null || cd.getError() < mejor.getError()){
+                mejor = cd;
+            }
+        }
+        return mejor;
+    }
+    
+    public void inicializaPesos(double[] D){
+        for(int i = 0; i < D.length; i++){
+            D[i] = 1.0/D.length;
+        }
+    }
     
     /**
-     * @param args the command line arguments
+     * @param D 
      */
-    // metodo que devuele el conjunto de entrenamiento o el de test en funcion de un porcentaje
-    public static ArrayList conjuntoDe(int categoria, int porcentaje, ArrayList<ArrayList> imagenesPorCat){
-        ArrayList imagenes = new ArrayList();
-        int cantidadImagenes;
-        int j = 0;
-        if(porcentaje == 80){
-            cantidadImagenes = (int) ((int) imagenesPorCat.get(categoria).size() * 0.8);
+    public void ActualizarDt(ArrayList<Imagen> entrenamiento, ClasificadorDebil mejor, double[] D, int[] binario, int numero){
+        int res;
+        
+        for(int i = 0; i < D.length; i++){
+            if(numero == entrenamiento.get(i).getDigitoPertenece()){
+                res = 1;
+            }
+            else{
+                res = -1;
+            }
+            
+            if(binario[i] == -1 && res == 1){
+                D[i] = (double) (D[i] * Math.pow(Math.E, mejor.getConfianza()));
+            }
+            else{
+                if(binario[i] == 1 && res == -1){
+                    D[i] = (double) (D[i] * Math.pow(Math.E, mejor.getConfianza()));
+                }
+                else{
+                    D[i] = (double) (D[i] * Math.pow(Math.E, -1 * mejor.getConfianza()));
+                }
+            }
         }
-        else{
-            cantidadImagenes = (int) ((int) imagenesPorCat.get(categoria).size() * 0.8);
-            j = cantidadImagenes;
-            cantidadImagenes = imagenesPorCat.get(categoria).size();
+        double Z = 0;
+        for(int i = 0; i < D.length; i++){
+            Z += D[i];
         }
-        while(j < cantidadImagenes){
-            imagenes.add(imagenesPorCat.get(categoria).get(j));
-            j++;
+        
+        if(Z != 1){ //De ser 1 el resultado seria el mismo
+            for(int i = 0; i < D.length; i++){
+                D[i] = D[i]/Z;
+            }
         }
-        return imagenes;
+    }
+    
+    public void AlgoritmoAdaboost(ArrayList<Imagen> entrenamiento, int cuantosDebiles, int numero){
+        int res;
+        double sumatorio = 0;
+        //System.out.println("¡ Adaboost en ejecución !");
+        double[] D = new double[entrenamiento.size()];
+        inicializaPesos(D);
+        
+        for(int i = 0; i < 200; i++){
+          ArrayList<ClasificadorDebil> debiles = new ArrayList<ClasificadorDebil>();
+          ClasificadorDebil mejor = null;
+          
+            for(int j = 0; j < cuantosDebiles; j++){
+                ClasificadorDebil ht = new ClasificadorDebil();
+                ht.Entrenar(entrenamiento,D, numero);
+                debiles.add(ht);
+            }
+            mejor = mejorClasificador(debiles);
+            int []binario = new int[entrenamiento.size()];
+            mejor.AplicaPixel(entrenamiento,binario);
+            //Actualizar Dt + 1
+            ActualizarDt(entrenamiento, mejor,D, binario, numero);
+            cf.anyadeClasificador(mejor);
+        }
+    }
+    
+    public int Clasifica(Imagen img){
+        ClasificadorDebil d = null;
+        int aplicado = 0;
+        double confianza = 0.0;
+        double suma = 0.0;
+        
+        for(int i = 0; i < cf.getClasificadores().size(); i++){
+            d = cf.getClasificadores().get(i);
+            aplicado = d.AplicaImagen(img);
+            confianza = d.getConfianza();
+            suma = suma + (aplicado * confianza);
+        }
+        if(suma > 0){
+            return 1;
+        }else if(suma < 0){
+            return 0;
+        }else{return 0;}
+    }
+
+}
+public class Main {
+    private ArrayList<AdaBoost> v_adaboost;
+    
+    public Main(){
+        v_adaboost = new ArrayList<AdaBoost>();
+    }
+    
+    public void anyade(AdaBoost ada){
+        v_adaboost.add(ada);
+    }
+    
+    public ArrayList<AdaBoost> getAda(){
+        return v_adaboost;
+    }
+    
+    public float AplicaFuertes(Imagen imagen, AdaBoost ada){
+        float resultado = 0;
+        
+        for(int i = 0; i <  ada.getClasificadorFuerte().getClasificadores().size();i++){
+            int aplicado = ada.getClasificadorFuerte().getClasificadores().get(i).AplicaImagen(imagen);
+            double confianza = ada.getClasificadorFuerte().getClasificadores().get(i).getConfianza();
+            resultado += (double)aplicado * confianza; 
+        }
+        return resultado;
+    }
+    
+    public static String devolverElemento(int digito){
+        String cad;
+        switch(digito){
+            case 0:
+                cad = "abrigo";
+                break;
+            case 1:
+                cad = "bolso";
+                break;
+            case 2:
+                cad = "camiseta";
+                break;
+            case 3:
+                cad = "pantalon";
+                break;
+            case 4:
+                cad = "sueter";
+                break;
+            case 5:
+                cad = "vestido";
+                break;
+            case 6:
+                cad = "zapatillas";
+                break;
+            case 7:
+                cad = "zapatos";
+                break;
+            default:
+                cad = "";
+        }
+        return cad;
     }
     
     public static void main(String[] args) {
@@ -65,55 +210,85 @@ public class Main {
         // ----------------------------------------------------------
         // ---------------- COMIENZO DE LA PRACTICA -----------------
         // ----------------------------------------------------------
-        // 1º Obtengo un ArrayList con todas categorias
-        ArrayList<ArrayList> imagenesPorCategorias = new ArrayList<ArrayList>();
-        for(int i = 0; i < 8; i++){
-            imagenesPorCategorias.add(ml.getImageDatabaseForDigit(i)); // esto me crea un arrayList con todas las categorias que asu vez tienen
-                                                                       // todas las imagens de cada una de las categorias
+        Main m = new Main();
+        CargaImagen carga = new CargaImagen();
+        carga.anyadeImagenes(ml);
+        carga.anyadeEntrenamiento(80); //Escogemos por ejemplo un 80% para entrenar
+        carga.anyadeTest(20); //Un 20% para test
+        double contador = 0;
+      
+        if(args.length >= 2){
+            if(args[0].equals("-train")){ //   
+                for(int i = 0; i < 8; i++){
+                    AdaBoost adb = new AdaBoost();
+                    adb.AlgoritmoAdaboost(carga.getImagenesEntr(), 100, i);
+                    contador = 0;
+
+                    for(int k = 0; k < carga.getImagenesEntr().size(); k++){    
+                        int coincide;
+                            int res = adb.Clasifica(carga.getImagenesEntr().get(k));
+                            if(i == carga.getImagenesEntr().get(k).getDigitoPertenece()){
+                                coincide = 1;
+                            }
+                            else{
+                                coincide = 0;
+                            }
+                            if(res == coincide){
+                                contador++;
+                            }
+                    }
+                    float resultado = (float) (((contador) / (carga.getImagenesEntr().size())) * 100);
+                    System.out.print("Recuento de aciertos de entrenamiento para " + i + ":      ");
+                    System.out.println("Recuento de aciertos de test para: " + i + ":     ");
+                    System.out.print("     " + resultado +"%");
+                    contador = 0;
+                    for(int k = 0; k < carga.getImagenesTest().size(); k++){    
+                        int coincide;
+                            int res = adb.Clasifica(carga.getImagenesTest().get(k));
+                            if(i == carga.getImagenesTest().get(k).getDigitoPertenece()){
+                                coincide = 1;
+                            }
+                            else{
+                                coincide = 0;
+                            }
+                            if(res == coincide){
+                                contador++;
+                            }
+                    }
+                    System.out.println("                                            " + (float) (((contador)/(carga.getImagenesTest().size()))*100) +"%");
+                    m.anyade(adb);
+                }
+                Fichero.creaFichero(m, args[1]);
+                System.out.println("Fichero creado o sobreescrito!");
+            }
+            else{
+                if(args[0].equals("-run")){
+                    Fichero.leeFichero(m, args[1]); // 0 -> 1
+                    //System.out.println("Los argumentos 1" +args[1]);
+                    String directorio_imagen = "." + args[2]; // 1 -> 2
+                    File file = new File(directorio_imagen);
+                    Imagen img1 = new Imagen(file.getAbsoluteFile());
+
+                    int digito_pertenece = 0;
+                    float r = m.AplicaFuertes(img1, m.getAda().get(0));
+
+                    for(int i = 1; i < m.getAda().size(); i++){
+                        float res = m.AplicaFuertes(img1, m.getAda().get(i));
+                        if(r < res){
+                            digito_pertenece = i;
+                            r = m.AplicaFuertes(img1, m.getAda().get(i));
+                        }
+                    }
+                    String cd = devolverElemento(digito_pertenece);
+                    System.out.println();
+                    System.out.println("La imagen es: " + cd);
+                }
+            }
         }
-        /*
-        Prueba de ver cuantas imagenes alamceno por categorias
-        for(int i = 0; i < imagenesPorCategorias.size(); i++){
-            System.out.println("La categoria " + i + " tiene " + imagenesPorCategorias.get(i).size() + " imagenes"); 
+        else{
+            System.out.println("Error en los argumentos.");
+            System.out.println("1) Adaboost –train <nombre_fichero.cf>");
+            System.out.println("2) Adaboost -run <nombre_fichero.cf> <imagen_prueba>");
         }
-        */
-        // ********
-        // MIRAR SI HAY QUE CREAR AQUI LOS CONJUNTOS DE ENTRENAMIENTO (80%) Y DE TEST (20%)
-        ArrayList<ArrayList> entrenamiento = new ArrayList<ArrayList>();
-        ArrayList<ArrayList> test = new ArrayList<ArrayList>();
-        for(int i = 0; i < 8; i++){
-            entrenamiento.add(conjuntoDe(i, 80, imagenesPorCategorias));        
-        }
-        for(int i = 0; i < 8; i++){
-            test.add(conjuntoDe(i, 20, imagenesPorCategorias));        
-        }
-        /*
-        
-        for(int i = 0; i < entrenamiento.size(); i++){
-            System.out.println("ENTRENAMIENTO La categoria " + i + " tiene " + entrenamiento.get(i).size() + " imagenes"); 
-        }
-        for(int i = 0; i < test.size(); i++){
-            System.out.println("TEST La categoria " + i + " tiene " + test.get(i).size() + " imagenes"); 
-        
-        */
-        
-        // ********
-        
-        // 3º ahora tenemos que lanzar adaboost tantas veces como categorias hay pasandole la categoria que queremos analzizar
-        ArrayList<ArrayList<ClasificadorDebil>> clasificadorFuerte = new ArrayList<ArrayList<ClasificadorDebil>>(); // Un clasificador fuerte esta compuesto por
-                                                                                                                    // un conjunto de clasificadores debiles esto crea un clasificador fuerte formado 
-                                                                                                                    // por clasificadores debiles de cada una de las categorias
-        //ArrayList<ClasificadorDebil> clasificadorFuerte = new ArrayList<ClasificadorDebil>();
-        Adaboost a = new Adaboost();
-        // TENGO QUE OBTENER EL VECTOR DE PESOS INICIAL, TODAS LAS POSICIONES ESTAN INICIALZADAS A 1 / numeroImagnesEntrenamiento
-        ArrayList vectorPesos = a.obtenerVectorDePesos(entrenamiento, false);
-        for(int categoria = 0; categoria < 8; categoria++){
-            // llamamos a adaboost
-            // le pasamos la categoria que queremos analizar
-            // le pasamos el conjunto de entrenamiento
-            clasificadorFuerte = a.algoritmoAdaboost(categoria, entrenamiento, vectorPesos);
-            vectorPesos = a.obtenerVectorDePesos(entrenamiento, true);
-        
-        }
-    }
+    } 
 }

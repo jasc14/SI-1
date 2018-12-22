@@ -21,7 +21,7 @@ public class Imagen {
     
     private BufferedImage biImage;
     private byte [] imageData;
-    
+    private int digito;
     Imagen(){
         biImage = null;
     }
@@ -62,6 +62,10 @@ public class Imagen {
     BufferedImage getBufferedImage(){
         return biImage;
     }
-    
-    
+    public int getDigitoPertenece(){
+        return digito;
+    }
+    public void setDigitoPertenece(int dig){
+        digito = dig;
+    }
 }
